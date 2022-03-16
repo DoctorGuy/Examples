@@ -1,0 +1,189 @@
+---
+title: "HW4"
+author: "Elliott Wills"
+date: "3/2/2022"
+output:
+  word_document: default
+  html_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+```{r}
+load("~/Aa - Machine learning/heart (3).RData")
+df = full
+library(tree)
+library(dplyr)
+library(ggplot2)
+library(ISLR)
+library(plotly)
+library(gbm)
+library(randomForest)
+
+##1a ##
+print("12 predictor variables, n = 171, each class has ")
+set.seed(2)
+train_ids = sample(nrow(df), 200)
+test_ids = seq(nrow(df))[-train_ids]
+
+data_all = df
+data_train = df[train_ids,]
+data_test = df[test_ids,] 
+
+
+## remove excess
+rm(full)
+rm(df)
+
+##1B##
+tree.fit <-tree(Disease~.,data_train) 
+
+##1C ##
+tree.fit.1 = predict(tree.fit, type = "class")
+
+# Training Missclassification error
+tab3 <- table(Predicted = tree.fit.1, Actual = data_train$Disease)
+tab3
+
+sum(diag(tab3))/sum(tab3)
+
+# test Missclassification error
+tree.fit.2 = predict(tree.fit, newdata = data_test, type = "class")
+
+tab4 <- table(Predicted = tree.fit.2, Actual = data_test$Disease)
+tab4
+
+sum(diag(tab4))/sum(tab4)
+
+##1D##
+set.seed(2)
+cv.fit =cv.tree(tree.fit, FUN = prune.misclass)
+cv.fit
+
+plot(cv.fit$size, cv.fit$dev, type = "b")
+
+print("The subtree with the lowest misclassification error appears to be at 8")
+
+plot(tree.fit)
+text(tree.fit)
+
+prune.fit <-prune.tree(tree.fit,best=8)
+plot(prune.fit)
+text(prune.fit,pretty=0)
+
+######COME BACK AND AHND DRAW BEFOR TURNING IN####
+
+##1E##
+prune.fit.p = predict(prune.fit, type = "class")
+
+# Training Missclassification error
+tab1 <- table(Predicted = prune.fit.p, Actual = data_train$Disease)
+tab1
+
+sum(diag(tab1))/sum(tab1)
+
+# test Missclassification error
+prune.fit.2 = predict(prune.fit, newdata = data_test, type = "class")
+
+tab2 <- table(Predicted = prune.fit.2, Actual = data_test$Disease)
+tab2
+
+sum(diag(tab2))/sum(tab2)
+
+print("The pruned tree appears to perform slightly worse than the overgrown tree in both the test and trainng set, however the over grown tree is likely overfitting. The pruned tree is still the better model because after the cross validation, we know we have minimized bias and variation.")
+
+##1F##
+set.seed(2)
+bag.med <-randomForest(Disease~.,data=data_train, mtry = 12, ntrees = 1000 ,importance=TRUE)
+bag.med
+
+bag.med.p = predict(bag.med, type = "class")
+# Training Missclassification error
+tab5 <- table(Predicted = bag.med.p, Actual = data_train$Disease)
+tab5
+
+sum(diag(tab5))/sum(tab5)
+
+# test Missclassification error
+bag.med.2 = predict(bag.med, newdata = data_test, type = "class")
+
+tab6 <- table(Predicted = bag.med.2, Actual = data_test$Disease)
+tab6
+
+sum(diag(tab6))/sum(tab6)
+
+print("Bagged model shows small imporvement in both the trainign and test data.")
+
+
+##1G##
+set.seed(2)
+rf.med <-randomForest(Disease~.,data=data_train, mtry = 4, ntrees = 1000 ,importance=TRUE)
+rf.med
+
+rf.med.p = predict(rf.med, type = "class")
+# Training Missclassification error
+tab7 <- table(Predicted = rf.med.p, Actual = data_train$Disease)
+tab7
+
+sum(diag(tab7))/sum(tab7)
+
+# test Missclassification error
+rf.med.2 = predict(rf.med, newdata = data_test, type = "class")
+
+tab8<- table(Predicted = rf.med.2, Actual = data_test$Disease)
+tab8
+
+sum(diag(tab8))/sum(tab8)
+
+print("random forest model shows even moreimporvement in both the trainign and test data.")
+
+##1H##
+print("The sources of randomness come from what variables are and are not choosen in certain trees. In the thousands of times the model is run, different variables or rows are dropped in that strap.")
+
+
+
+```
+
+
+
+```{r}
+##2A##
+set.seed(2)
+X <- runif(50, -1, 1)
+E <- rnorm(50, mean = 0, sd = 1)
+
+##2B##
+Y = 3 - 2*X +3*((X)^3) + E
+
+##2C##
+Spline1 <- smooth.spline(X, Y, lambda = 1e-3)
+Spline2 <- smooth.spline(X, Y, lambda = 1e-7)
+
+##2D##
+plot(X, Y)
+
+Spline.lam3 <- predict(Spline1)
+Spline.lam7 <- predict(Spline2)
+
+ggplot(data.frame(x=Spline1$data$x, y=Spline1$data$y, xfit=Spline1$x, yfit=Spline1$y, 
+                  x1=Spline2$data$x, y1=Spline2$data$y, x1fit=Spline2$x, y1fit=Spline2$y, 
+  x2=X, y2=Y, x2fit=X, y2fit=Y)) +
+                      geom_point(aes(x,y)) + geom_line(aes(colour = "green4", xfit, yfit)) +  geom_point(aes(x1,y1)) + geom_line(aes(colour = 'red4', x1fit, y1fit)) +
+  geom_point(aes(x2,y2)) + geom_line(aes(colour = "blue4", x2fit, y2fit)) +
+  scale_colour_manual(values = c( "blue4", "green4","red4"), name = "Legend")
+
+print("Lambda here prevents overfitting. We can see that the higher the lambda (1e-3) is less likely to be overfit, where as the labmda nearest to zero is overfit and almost a carbon copy of the true function.  ")
+
+
+##2E##
+Spline3 <- smooth.spline(X, Y, cv = T)
+Spline.p <- predict(Spline3)
+
+ggplot(data.frame(x2=X, y2=Y, x2fit=X, y2fit=Y, x=Spline3$data$x, y=Spline3$data$y, xfit=Spline3$x, yfit=Spline3$y)) +
+  geom_point(aes(x2,y2)) + geom_line(aes(colour = "blue4", x2fit, y2fit)) + 
+                                       geom_point(aes(x,y)) + 
+                                       geom_line(aes(colour = "red4", xfit, yfit)) +
+    scale_colour_manual(values = c( "blue4","red4"), name = "Legend")
+
+
+```
