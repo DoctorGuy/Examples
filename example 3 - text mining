@@ -1,0 +1,285 @@
+---
+title: "Virus and Violence"
+author: "Elliott Wills @ DOH"
+date: "8/10/2021"
+output: html_document
+---
+
+## Gotta get that data loaded
+## Of course this will be replaced with whatever query you run
+```{r}
+library(readxl)
+library(tidyverse)
+library(htmlwidgets)
+library(jsonlite)
+library(httr)
+library(keyring)
+library(tm)
+library(tidytext)
+library(ggplot2)
+library(stringr)
+library(plyr)
+library(dplyr)
+library(plotly)
+library(magrittr)
+library(dygraphs)
+library(vroom)
+library(tm)
+library(tidytext)
+library(ggplot2)
+library(forcats)
+
+```
+
+```{r}
+DATA <- read_excel("C:/Users/ejw2303/Downloads/DATASET_Cut.xlsx")
+
+## use to replace names with spaces
+
+names(DATA)<-str_replace_all(names(DATA), c(" " = "." , "," = "" ))
+
+desired_data <- dplyr::select( DATA, Discharge.Diagnosis, PIN, Date, Time, 
+Facility.Name, Region, ChiefComplaintOrig, TriageNotesOrig, Visit_ID, Sex, Age, Insurance_Coverage)
+
+## cleans our punctuation in notes
+desired_data$TriageNotesClean <- desired_data$TriageNotesOrig %>%
+toupper() %>%
+removePunctuation()
+
+## TEST
+db1$TriageNotesClean <- db1$TriageNotesOrig %>%
+toupper() %>%
+removePunctuation()
+
+
+##SPLIT into 3
+db1 <- desired_data[1:41025,]
+db2 <- desired_data[41026:82050,]
+db3 <- desired_data[82051:123075,]
+
+## COVID.Row
+for(x in 1:nrow(db1)){
+db1$BinaryDetect[x] <- ifelse( str_detect(db1$TriageNotesOrig[x], 
+"COVID") == TRUE, 1, 0)
+
+}
+
+for(x in 1:nrow(db2)){
+db2$BinaryDetect[x] <- ifelse( str_detect(db2$TriageNotesOrig[x], 
+"COVID") == TRUE, 1, 0)
+
+}
+
+for(x in 1:nrow(db3)){
+db3$BinaryDetect[x] <- ifelse( str_detect(db3$TriageNotesOrig[x], 
+"COVID") == TRUE, 1, 0)
+
+}
+## Merge and then rename the column
+## Gonna have to repeat this across variable of
+## interest
+TheData <- rbind(db1, db2, db3)
+TheData <- TheData %>%
+  rename(COVID = BinaryDetect)
+
+## Protest
+
+db1 <- TheData[1:41025,]
+db2 <- TheData[41026:82050,]
+db3 <- TheData[82051:123075,]
+
+for(x in 1:nrow(db1)){
+db1$BinaryDetect[x] <- ifelse( str_detect(db1$TriageNotesOrig[x], "PROTEST") == TRUE, 1, 0)
+
+}
+
+for(x in 1:nrow(db2)){
+db2$BinaryDetect[x] <- ifelse( str_detect(db2$TriageNotesOrig[x], "PROTEST") == TRUE, 1, 0)
+
+}
+
+for(x in 1:nrow(db3)){
+db3$BinaryDetect[x] <- ifelse( str_detect(db3$TriageNotesOrig[x], "PROTEST") == TRUE, 1, 0)
+
+}
+
+TheData <- rbind(db1, db2, db3)
+TheData <- TheData %>%
+  rename(Protest = BinaryDetect)
+
+## Police
+
+db1 <- TheData[1:41025,]
+db2 <- TheData[41026:82050,]
+db3 <- TheData[82051:123075,]
+
+for(x in 1:nrow(db1)){
+db1$BinaryDetect[x] <- ifelse( str_detect(db1$TriageNotesOrig[x], "RUBBER") == TRUE, 1, 0)
+
+}
+
+for(x in 1:nrow(db2)){
+db2$BinaryDetect[x] <- ifelse( str_detect(db2$TriageNotesOrig[x], "RUBBER") == TRUE, 1, 0)
+
+}
+
+for(x in 1:nrow(db3)){
+db3$BinaryDetect[x] <- ifelse( str_detect(db3$TriageNotesOrig[x], "RUBBER") == TRUE || str_detect(db3$TriageNotesOrig[x], "TEAR") == TRUE, 1, 0)
+
+}
+
+TheData <- rbind(db1, db2, db3)
+TheData <- TheData %>%
+  rename(Rubber = BinaryDetect)
+
+```
+## Goals: Demographics of those who have Covid concerns + symptoms
+```{r}
+
+## First group NOTE elliott raise the select thing
+## should look like COVID$desired_data not covid.concern 
+## Break it up...Stupid R
+## Stupid me? No idea why size matters but when you break it down it doesn't
+db1 <- TheData[1:14156,]
+db2 <- TheData[14157:28312,]
+db3 <- TheData[28313:42468,]
+db4 <- TheData[42469:56624,]
+db5 <- TheData[56625:70780,]
+db6 <- TheData[70781:84936,]
+db7 <- TheData[84936:99092,]
+db8 <- TheData[99093:113248,]
+db9 <- TheData[113248:123075,]
+
+DemoCVDPRO <- db1 %>%
+filter(db1$COVID == 1 && db1$Protest == 1) 
+
+Rm(db1-9)
+## REmove the databases abd ask cody wtf this means
+
+
+
+## making covid.concern variable
+Covid.Concern <- function(TheData, 
+ifelse(contains == "COVID" || contains == "U7.01", val = 1, 0))
+  
+## Making protest.attendence variable
+Protest.att <- function(TheData, 
+ifelse(contains == "PROTEST" || contains == "U7.01", val = 1, 0))
+
+Race_Eth_Def <- function(syn_df, Violate_UIHI_Mandate = FALSE){
+syn_df$race <- 'Unknown'
+
+#finding if multiple races
+syn_df$count_race = str_count(syn_df$Race_flat, ";")
+syn_df[syn_df$count_race>2, 'race'] <- 'Multiple Races**'
+syn_df[syn_df$Race_flat==';1002-5;', 'race'] <- 'American Indian/Alaska Native**'
+
+DemoCVDNOPRO <- TheData %>%
+Filter(TheData, TheData$COVID = 1) %>%
+groupby(Facility.Region) %>%
+Filter(TheData, TheDate$Protest = 1)
+
+DemoNOCVDPRO <- desired_data %>%
+Filter(desired_data, COVID Concern = NA) %>%
+groupby(Facility.Region) %>%
+Filter(desired_data, Protest == 1)
+
+
+
+## replace dtat or desired_data w/ TheData
+
+TheData 
+
+## gonna have to split it up into 3
+## Create function
+All_Inst <- TheData[!is.na(TheData$BinaryDetect),]
+Pos_Inst <- All_Inst[All_Inst$BinaryDetect == 1,]
+Neg_Inst <- All_Inst[All_Inst$BinaryDetect == 0,]
+Neg_Inst$BinaryDetect
+Pos_Inst$BinaryDetect
+All_Inst$BinaryDetect
+
+
+
+
+
+
+## Create text mining for police brutality cases
+
+PoliceInc <- 
+
+SexG1 <- DemoCVDPRO %>%
+Group_By(Sex)
+
+SexG2 <- DemoCVDNOPRO %>%
+Group_By(Sex)
+
+SexG3 <- DemoNOCVDPRO
+Group_By(Sex)
+
+
+ 
+```
+
+##  
+
+```{r}
+
+POSgraph_fucntion <- function(DemoC, PI){
+graph <- ggplot(DemoC, aes(Region, 
+y = PI$BinaryDetect))+
+               geom_point(2)+
+               geom_line("red")
+               return(graph)
+}
+ 
+Positivecasegraph <- POSgraph_function(DEMOCVDPRO, POSINT)
+
+
+
+ggplot(DemoCVDPRO, aes(Region, 
+y = PosInst$BinaryDetect))+
+               geom_point(2)+
+               geom_line("red")
+               
+ggplot(DemoCVDNOPRO, aes(Facility`Region, 
+y = NegInst$BinaryDetect))+
+               geom_point(2)+
+               geom_line("red") 
+               
+ggplot(DemoCVDPRO, aes(Facility`Region, 
+y = AllInst$BinaryDetect))+
+               geom_point(2)+
+               geom_line("red")
+               
+TimeSeriesCovidPro <- dygraph(DemoCVDPRO, main = "Covid concerns at a protest") %>% dyRangeSelector(dateWindow = c("2020-05-24", "2020-09-30"))
+
+TimeSeriesNoCovidPro <- dygraph(DemoCVDPRO, main = "Covid concerns at a protest") %>% dyRangeSelector(dateWindow = c("2020-05-24", "2020-09-30"))
+
+TimeSeriesCovidNoPro <- dygraph(DemoCVDPRO, main = "Covid concerns at a protest") %>% dyRangeSelector(dateWindow = c("2021-05-24", "2021-09-30"))
+```
+
+## clean for police intervention
+```{r}
+PoliceInt <- DemoCVDNOPRO %>%
+mutate(DemoCVDNOPRO, )
+
+DemoCVDNOPROnopolice <- DemoCVDNOPRO %>%
+mutate(DemoCVDNOPRO, PoliceINT )
+
+```
+
+## clean for chronic illness
+```{r}
+
+
+```
+## More txt mining
+
+
+## Runs 
+sampledf <- db1
+sampledf2 <- sampledf 
+sampledfdf_Unigram <- sampledf2 %>%
+unnest_tokens(Covid, TriageNotesClean) %>%
+dplyr::count(Covid)
