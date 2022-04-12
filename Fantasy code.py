@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import seaborn as sns
 
-
+## Data from https://www.fantasyfootballdatapros.com/csv_files
 df = pd.read_csv('C:/Users/ellio_000/Documents/IHME/2019projections.csv')
 Train, Test = train_test_split(df, test_size =.2, random_state = 42)
 
