@@ -24,7 +24,7 @@ seed_words_test = {1: 'north', 2: 'rhythm', 3: 'feature', 4: 'layer', 5: 'coconu
                    9: 'camera', 10: 'can', 11: 'early', 12: 'story', 13: 'stable', 14: 'report', 15: 'group', 16: 'depend',
                    17: 'employ', 18: 'problem', 19: 'monitor', 20: 'interest', 21: 'logic', 22: 'sausage', 23: 'toilet', 24: 'pencil'}
 
-EXTENSION_PATH = 'C:/Users/ellio/AppData/Local/Google/Chrome/User Data/Default/Extensions/nkbihfbeogaeaoehlefnkodbefgpgknn/10.28.3_0.crx'
+EXTENSION_PATH = '##Hidden for privacy###'
 
 while text == '0':
     opt = webdriver.ChromeOptions()
